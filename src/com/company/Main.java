@@ -115,26 +115,252 @@ public class VPLstart
 
         int op, a, b, c, n, address;
 
-        while(  ){
+        while(mem[ip+1] != 0){ //nextInt
 
             op = mem[ ip ];
 
-            if( op == 0 ){
+            if( op == 0 ){          // Instruction #0: Do Nothing
             }
-            else if( op == 1 ){
+            else if( op == 1 ) {    // Instruction #1: All occurrences of L are replaced by the actual index
+                                    // in mem array where the opcode 1 would have been stored.
+
             }
-      ....
-      else if( op == 4 ){
-                n = mem[ ip+1 ];
-                sp += n;
-                ip += 2;
+            else if( op == 2) {     // Instruction #2: Set up for execution of the subprograms that begins at label L.
+
             }
-      ....
+            else if( op == 3) {     // Instruction #3: Push the contents of cell a on the stack.
+                a = mem[ ip+1 ];
+                mem[ sp ] = a;      // store a where the sp is currently pointing
+                ip += 2;            // move instruction pointer next instruction
+            }
+            else if( op == 4 ) {    // Instruction #4: Increase sp by n to make space for local variables.
+                                    // in the current stack frame.
+                n = mem[ ip+1 ];    // store the argument n
+                sp += n;            // move the stack point n spaces
+                ip += 2;            // move instruction pointer next instruction
+            }
+            else if( op == 5 ) {    // Instruction #5: Return from the current subprogram,
+                                    // including putting the value stored in call a in rv.
+                a = mem[ ip+1 ];    // store a
+                rv = mem[ bp + 2 + a];  // Store contents of cell a in rv
+                bp = mem[ bp ];     // base pointer is
+                sp = mem[ bp + 1 ]; // stack pointer
+                ip += 2;            // move instruction pointer next instruction
+            }
 
-//      use mem[ bp + 2 + a ] for cell a
+        // use mem[ bp + 2 + a ] for cell a
+            else if( op == 6) {     // Instruction #6: Copy the value store in rv into cell a
+                a = mem[ ip+1 ];    // store a
+                mem[ bp + 2 + a] = rv;      // store contents of cell rv into cell a
+                ip += 2;            // move instruction pointer next instruction
+            }
+            else if( op == 7 ){     // Instruction #7: Change instruction point to L.
+
+            }
+            else if( op == 8 ){     // Instruction #8: If the value stored in cell a is non-zero, change
+                                    // instruction pointer to L (otherwise, move ip to the next instruction).
+                a = mem[ ip+2 ];    // store a
+                int temp = mem[bp + 2 + a]; // store contents of cell a as temp
+
+                if( temp != 0 ){            // if contents of cell a "temp" is non-zero, execute--
+                    int L = mem[ ip+1 ];    // store L
+                    ip = L;         // change instruction point to L
+                } else { ip += 3; } // Otherwise, move instruction pointer next instruction
+            }
+            else if( op == 9 ){     // Instruction #9: Add the values in cell b and cell c
+                                    // and store the result in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                mem[ bp+2+a ] = mem[ bp+2+b ] + mem[ bp+2+c ];    // add contents of cells b,c then store in cell a
+                // ^^^ a = b+c
+
+                ip += 4;            // move instruction pointer next instruction
+            }
+            else if( op == 10 ){    // Instruction #10: Subtract the values in cell b and cell c
+                                    // and store the result in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                mem[ bp+2+a ] = mem[ bp+2+b ] - mem[ bp+2+c ];    // subtract contents of cells b,c then store in cell a
+                // ^^^ a = b-c
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 11 ){    // Instruction #11: Multiply the values in cell b and cell c
+                                    // and store the result in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                mem[ bp+2+a ] = mem[ bp+2+b ] * mem[ bp+2+c ];    // multiply contents of cells b,c then store in cell a
+                // ^^^ a = b*c
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 12 ){     // Instruction #12: Divide the values in cell b and cell c
+                                    // and store the result in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                mem[ bp+2+a ] = mem[ bp+2+b ] / mem[ bp+2+c ];    // divide contents of cells b,c then store in cell a
+                // ^^^ a = b/c
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 13 ){    // Instruction #13: The remainder of cells b is stored in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                mem[ bp+2+a ] = mem[ bp+2+b ] % mem[ bp+2+c ];    // remainder of cells b/c is stored in cell a
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 14 ){    // Instruction #14: If the values in cell b and cell c are equal,
+                                    // store value 1 in cell a, otherwise store 0 in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                if(mem[ bp+2+b] == mem[ bp+2+c]){
+                    mem[ bp+2+a ] = 1;      // if equal store 1 in cell 1
+                } else { mem[ bp+2+a ] = 0;}    // otherwise, store 0
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 15 ){    // Instruction #15: If the values in cell b and cell c are not equal,
+                                    // store value 1 in cell a, otherwise store 0 in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                if(mem[ bp+2+b] != mem[ bp+2+c]){
+                    mem[ bp+2+a ] = 1;
+                } else { mem[ bp+2+a ] = 0;}
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 15 ){    // Instruction #15: If the values in cell b and cell c are not equal,
+                                    // store value 1 in cell a, otherwise store 0 in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                if(mem[ bp+2+b] != mem[ bp+2+c]){
+                    mem[ bp+2+a ] = 1;
+                } else { mem[ bp+2+a ] = 0;}
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 16 ){    // Instruction #16: If the value in cell b is less than cell c,
+                                    // store value 1 in cell a, otherwise store 0 in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                if(mem[ bp+2+b] < mem[ bp+2+c]){
+                    mem[ bp+2+a ] = 1;
+                } else { mem[ bp+2+a ] = 0;}
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 17 ){    // Instruction #17: If the value in cell b is less than or great than cell c,
+                                    // store value 1 in cell a, otherwise store 0 in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                if(mem[ bp+2+b] <= mem[ bp+2+c]){
+                    mem[ bp+2+a ] = 1;
+                } else { mem[ bp+2+a ] = 0;}
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 18 ){    // Instruction #18: If the value in cell b is 1 AND the value in cell c is 1,
+                                    // store value 1 in cell a, otherwise store 0 in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                if(mem[ bp+2+b] == 1 && mem[ bp+2+c] == 1){
+                    mem[ bp+2+a ] = 1;
+                } else { mem[ bp+2+a ] = 0;}
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op == 19 ){    // Instruction #19: If the value in cell b is 1 OR the value in cell c is 1,
+                                    // store value 1 in cell a, otherwise store 0 in cell a.
+                a = mem[ ip+1 ];    // store a value
+                b = mem[ ip+2 ];    // store b value
+                c = mem[ ip+3 ];    // store c value
+
+                if(mem[ bp+2+b] == 1 || mem[ bp+2+c] == 1){
+                    mem[ bp+2+a ] = 1;
+                } else { mem[ bp+2+a ] = 0;}
+
+                ip += 4;            // move instruction pointer next instruction
+
+            }
+            else if( op== 20 ){     // Instruction #20: If cell b holds zero, put 1 in cell a, other put 0.
+
+                a = mem[ ip+1];     // store a value
+                b = mem[ ip+2];     // store b value
+
+                if(mem[ bp+2+b ] == 0){     // if the contents in cell b is 0,
+                    mem[ bp+2+a ] = 1;      // store 1 in cell a
+                } else { mem[ bp+2+a ] = 0; }       // otherwise store 0 in cell a
+
+            }
+            else if( op== 21 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
+            else if( op== 20 ){     // Instruction #
+
+            }
 
 
-        }
+        } // end while loop
 
     }// main
 
@@ -148,9 +374,9 @@ public class VPLstart
     private static final int callCode = 2;
     private static final int passCode = 3;
     private static final int allocCode = 4;
-    private static final int returnCode = 5;  // return a means "return and put
-    // copy of value stored in cell a in register rv
-    private static final int getRetvalCode = 6;//op a means "copy rv into cell a"
+    private static final int returnCode = 5;    // return a means "return and put
+                                                // copy of value stored in cell a in register rv
+    private static final int getRetvalCode = 6; //op a means "copy rv into cell a"
     private static final int jumpCode = 7;
     private static final int condJumpCode = 8;
 
@@ -171,12 +397,12 @@ public class VPLstart
 
     // ops involving transfer of data
     private static final int litCode = 22;  // litCode a b means "cell a gets b"
-    private static final int copyCode = 23;// copy a b means "cell a gets cell b"
-    private static final int getCode = 24; // op a b means "cell a gets
-    // contents of cell whose
-    // index is stored in b"
+    private static final int copyCode = 23; // copy a b means "cell a gets cell b"
+    private static final int getCode = 24;  // op a b means "cell a gets
+                                            // contents of cell whose
+                                            // index is stored in b"
     private static final int putCode = 25;  // op a b means "put contents
-    // of cell b in cell whose offset is stored in cell a"
+                                            // of cell b in cell whose offset is stored in cell a"
 
     // system-level ops:
     private static final int haltCode = 26;
@@ -209,32 +435,47 @@ public class VPLstart
             // for all other ops, lump by count:
 
         else if( opcode==noopCode ||
-                opcode==haltCode ||
-                opcode==newlineCode ||
-                opcode==debugCode
+                 opcode==haltCode ||
+                 opcode==newlineCode ||
+                 opcode==debugCode
                 )
             return 0;  // op
 
-        else if( opcode==passCode || opcode==allocCode ||
-                opcode==returnCode || opcode==getRetvalCode ||
-                opcode==inputCode ||
-                opcode==outputCode || opcode==symbolCode ||
-                opcode==allocGlobalCode
+        else if( opcode==passCode ||
+                 opcode==allocCode ||
+                 opcode==returnCode ||
+                 opcode==getRetvalCode ||
+                 opcode==inputCode ||
+                 opcode==outputCode ||
+                 opcode==symbolCode ||
+                 opcode==allocGlobalCode
                 )
             return 1;  // op arg1
 
-        else if( opcode==notCode || opcode==oppCode ||
-                opcode==litCode || opcode==copyCode || opcode==newCode ||
-                opcode==toGlobalCode || opcode==fromGlobalCode
+        else if( opcode==notCode ||
+                 opcode==oppCode ||
+                 opcode==litCode ||
+                 opcode==copyCode ||
+                 opcode==newCode ||
+                 opcode==toGlobalCode ||
+                 opcode==fromGlobalCode
 
                 )
             return 2;  // op arg1 arg2
 
-        else if( opcode==addCode ||  opcode==subCode || opcode==multCode ||
-                opcode==divCode ||  opcode==remCode || opcode==equalCode ||
-                opcode==notEqualCode ||  opcode==lessCode ||
-                opcode==lessEqualCode || opcode==andCode ||
-                opcode==orCode || opcode==getCode || opcode==putCode
+        else if( opcode==addCode ||
+                 opcode==subCode ||
+                 opcode==multCode ||
+                 opcode==divCode ||
+                 opcode==remCode ||
+                 opcode==equalCode ||
+                 opcode==notEqualCode ||
+                 opcode==lessCode ||
+                 opcode==lessEqualCode ||
+                 opcode==andCode ||
+                 opcode==orCode ||
+                 opcode==getCode ||
+                 opcode==putCode
                 )
             return 3;
 
