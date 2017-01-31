@@ -115,7 +115,7 @@ public class VPLstart
 
         int op, a, b, c, n, address;
 
-        while(mem[ip+1] != 0){ //nextInt
+        while(mem[ip] != 26){ //nextInt
 
             op = mem[ ip ];
 
@@ -123,16 +123,18 @@ public class VPLstart
             }
             else if( op == labelCode ) {    // Instruction #1: All occurrences of L are replaced by the actual index
                                     // in mem array where the opcode 1 would have been stored.
-
+                                    // Do nothing
             }
-            else if( op == callCode) {     // Instruction #2: Set up for execution of the subprograms that begins at label L.
-
+            else if( op == callCode) {     // Instruction #2: Set up for execution of the
+                                            // subprograms that begins at label L.
+                numPassed = 0;
             }
-            else if( op == 3) {     // Instruction #3: Push the contents of cell a on the stack.
+            else if( op == passCode ) {     // Instruction #3: Push the contents of cell a on the stack.
                 a = mem[ ip+1 ];
-                mem[ sp ] = a;      // store a where the sp is currently pointing
+                mem[ sp+2+numPassed ] = mem[ bp+2+a ];      // store a where the new sp is currently pointing
+                numPassed++;
             }
-            else if( op == passCode ) {    // Instruction #4: Increase sp by n to make space for local variables.
+            else if( op == allocCode ) {    // Instruction #4: Increase sp by n to make space for local variables.
                                     // in the current stack frame.
                 n = mem[ ip+1 ];    // store the argument n
                 sp += n;            // move the stack point n spaces
@@ -149,7 +151,8 @@ public class VPLstart
                 mem[ bp + 2 + a] = rv;      // store contents of cell rv into cell a
             }
             else if( op == jumpCode ){     // Instruction #7: Change instruction point to L.
-
+                int L = mem[ ip+1 ];        // store L
+                ip = L;
             }
             else if( op == condJumpCode ){     // Instruction #8: If the value stored in cell a is non-zero, change
                                     // instruction pointer to L (otherwise, move ip to the next instruction).
@@ -352,16 +355,23 @@ public class VPLstart
                 int m = mem[ bp+2+b ]; // value stored in cell b denoted by m
                 mem[ bp+2+a ] = hp-m;   // 
             }
-            else if( op == allocGlobalCode ){    // Instruction #32:
+            else if( op == allocGlobalCode ){    // Instruction #32: This instruction must occur first in any program
+                                                // that uses it. It simply sets the initial value of
+                                                // sp to n cells beyond the end of stored program
+                                                // memory, and sets gp to the end of stored program memory.
+                n = mem[ ip+1 ];    // store n value
+
 
             }
-            else if( op == toGlobalCode ){    // Instruction #33:
-
+            else if( op == toGlobalCode ){    // Instruction #33: Copy the contents of cell a to the
+                                            // global memory area at index gp+n.
+                a = mem[ ip+1 ];    // store a value
+                mem[ gp+a ] = mem[ bp+2+a ];
             }
             else if( op == fromGlobalCode ){    // Instruction #34:
 
             }
-            ip += numArgs(op)+1;    // move instruction pointer to next instruction
+            ip += numArgs(op);    // move instruction pointer to next instruction
 
 
         } // end while loop
