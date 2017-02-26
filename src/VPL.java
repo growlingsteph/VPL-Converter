@@ -126,44 +126,35 @@ public class VPL{
             }
             else if( op == callCode) {     		// Instruction #2: Set up for execution of the
                                             	// subprograms that begins at label L.
-                System.out.println("executing instr. #2 \nold ip: " + ip + "; old bp: " + bp + "; old sp: " + sp + "; old gp: " + gp);
                 address = mem[ ip+1 ];			// store address
-                System.out.println("address: " + address);
-                mem[ sp ] = bp;     // store previous bp
-                bp = sp;            // move bp to current sp + numPassed
-                mem[ sp+1 ] = ip + 2;           // store ip of previous next instruction
+                mem[ sp+1 ] = bp;               // store previous bp
+                bp = sp+1;                      // move bp to current sp + numPassed
+                mem[ bp+1 ] = ip + 2;           // store ip of previous next instruction
                 ip = address;			   		// move ip to new address
-                sp += numPassed + 2;                     // move sp to the end of the current stack, passed the numbers passed to stack.
+                sp = bp + 2 + numPassed;        // move sp to the end of the current stack
                 numPassed = 0;                  // reset numPassed variable
-                System.out.println("new ip: " + ip + "; new bp: " + bp + "; new sp: " + sp + "; new gp: " + gp);
+//                System.out.println("callCode (subprogram) to address: " + address);
             }
             else if( op == passCode ) {     	// Instruction #3: Push the contents of cell a on the stack.
                 a = mem[ ip+1 ];                // store a value
-                System.out.println("Instruction #3: a = " + a);
-                mem[ sp + 2 + numPassed ] = mem[ bp+2+a ];      // store the contents of a in the first empty cell on the stack
-                System.out.println("contents of cell " + a + ": " + mem[ bp+2+a ] + "; contents pushed to cell sp + numpassed = " + mem[ sp + numPassed ]);
+                mem[ sp + 3 + numPassed ] = mem[ bp+2+a ];      // store the contents of cell a in the first empty cell on the stack
                 numPassed++;                    // increment numPassed
-                ip = ip + (numArgs(op) + 1);      // move instruction pointer to next instruction
-                System.out.println("after instr. #3: \nvalue in cell " + a + " pushed to stack in cell " + (sp+numPassed) + "; numPassed = " + numPassed);
+                ip = ip + (numArgs(op) + 1);    // move instruction pointer to next instruction
             }
             else if( op == allocCode ) {    	// Instruction #4: Increase sp by n to make space for local variables.
                                     			// in the current stack frame.
                 n = mem[ ip+1 ];    			// store the argument n
-                System.out.println("executing instr. #4: \nold sp " + sp + "; n: " + n);
-                sp = sp + n;           		// move the stack point n spaces from OG sp
-	            // numPassed = 0;                  // start counting the numbers passed to the stack
-                ip = ip + (numArgs(op) + 1);      // move instruction pointer to next instruction
-                System.out.println("new sp " + sp );
+                sp = sp + n;           		    // move the stack point n spaces from OG sp
+                ip = ip + (numArgs(op) + 1);    // move instruction pointer to next instruction
             }
             else if( op == returnCode ) {    	// Instruction #5: Return from the current subprogram,
                                     			// including putting the value stored in call a in rv.
-                System.out.println("executing instr. #5 \nold ip: " + ip + "; old bp: " + bp + "; old sp: " + sp + "; old gp: " + gp);
                 a = mem[ ip+1 ];    			// store a value
                 rv = mem[ bp + 2 + a];  		// Store contents of cell a in rv
                 ip = mem[ bp+1 ];               // restore previous ip address
-                sp = bp;                        // restore previous sp address
+                sp = bp-1;                      // restore previous sp address
                 bp = mem[ bp+0 ];               // restore previous bp address
-                System.out.println("new ip: " + ip + "; new bp: " + bp + "; new sp: " + sp + "; new gp: " + gp);
+//                System.out.println("returning to previous subroutine.");
             }
             else if( op == getRetvalCode) {     // Instruction #6: Copy the value store in rv into cell a
                 a = mem[ ip+1 ];    			// store a value
@@ -173,20 +164,17 @@ public class VPL{
             else if( op == jumpCode ){     		// Instruction #7: Change instruction point to L.
                 address = mem[ ip+1 ];        	// store address
                 ip = address;
-                System.out.println("end of 7 ip: " + ip);
+//                System.out.println("jumpCode address: " + address);
             }
             else if( op == condJumpCode ){     	// Instruction #8: If the value stored in cell a is non-zero, change
                                     			// instruction pointer to L (otherwise, move ip to the next instruction).
-                System.out.println("start of 8 ip: " + ip);
-                System.out.println("start of 8 op: " + op);
+                address = mem[ ip+1 ];          // store value L as address
                 a = mem[ ip+2 ];    			// store a value
-                int temp = mem[bp + 2 + a]; 	// store contents of cell a as temp
 
-                if( temp != 0 ){            	// if contents of cell a "temp" is non-zero, execute--
-                    address = mem[ ip+1 ];    	// store address
+                if( mem[ bp+2+1 ] != 0 ){       // if contents of cell a is non-zero, execute--
                     ip = address;         		// change instruction pointer to new address
-                } else { ip = ip + 3; } // Otherwise, move instruction pointer next instruction
-                System.out.println("end of 8 ip: " + ip);
+                } else { ip = ip + 3; }         // Otherwise, move instruction pointer next instruction
+//                System.out.println("condJumpCode address: " + address);
             }
             else if( op == addCode ){     		// Instruction #9: Add the values in cell b and cell c
                                     			// and store the result in cell a.
@@ -196,7 +184,6 @@ public class VPL{
                 c = mem[ ip+3 ];    			// store c value
 
                 mem[ bp+2+a ] = mem[ bp+2+b ] + mem[ bp+2+c ];    // add contents of cells b,c then store in cell a
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the sum is: " + mem[ bp+2+a ]);
                 // ^^^ a = b+c
 	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
@@ -207,9 +194,7 @@ public class VPL{
                 c = mem[ ip+3 ];    			// store c value
 
                 mem[ bp+2+a ] = mem[ bp+2+b ] - mem[ bp+2+c ];    // subtract contents of cells b,c then store in cell a
-
                 // ^^^ a = b-c
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the subtract result is: " + mem[ bp+2+a ]);
                 ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == multCode ){    		// Instruction #11: Multiply the values in cell b and cell c
@@ -220,8 +205,7 @@ public class VPL{
 
                 mem[ bp+2+a ] = mem[ bp+2+b ] * mem[ bp+2+c ];    // multiply contents of cells b,c then store in cell a
                 // ^^^ a = b*c
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the multiply result is: " + mem[ bp+2+a ]);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == divCode ){     		// Instruction #12: Divide the values in cell b and cell c
                                     			// and store the result in cell a.
@@ -231,8 +215,7 @@ public class VPL{
 
                 mem[ bp+2+a ] = mem[ bp+2+b ] / mem[ bp+2+c ];    // divide contents of cells b,c then store in cell a
                 // ^^^ a = b/c
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the divide result is: " + mem[ bp+2+a ]);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == remCode ){    		// Instruction #13: The remainder of cells b is stored in cell a.
                 a = mem[ ip+1 ];    			// store a value
@@ -240,8 +223,7 @@ public class VPL{
                 c = mem[ ip+3 ];    			// store c value
 
                 mem[ bp+2+a ] = mem[ bp+2+b ] % mem[ bp+2+c ];    // remainder of cells b/c is stored in cell a
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the remainder result is: " + mem[ bp+2+a ]);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == equalCode ){    		// Instruction #14: If the values in cell b and cell c are equal,
                                     			// store value 1 in cell a, otherwise store 0 in cell a.
@@ -252,8 +234,7 @@ public class VPL{
                 if(mem[ bp+2+b] == mem[ bp+2+c]){
                     mem[ bp+2+a ] = 1;      	// if equal store 1 in cell 1
                 } else { mem[ bp+2+a ] = 0;}    // otherwise, store 0
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the is-equal result is: " + mem[ bp+2+a ]);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == notEqualCode ){    	// Instruction #15: If the values in cell b and cell c are not equal,
                                     			// store value 1 in cell a, otherwise store 0 in cell a.
@@ -264,8 +245,7 @@ public class VPL{
                 if(mem[ bp+2+b] != mem[ bp+2+c]){
                     mem[ bp+2+a ] = 1;
                 } else { mem[ bp+2+a ] = 0;}
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the is-not equal result is: " + mem[ bp+2+a ]);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == lessCode ){    		// Instruction #16: If the value in cell b is less than cell c,
                                     			// store value 1 in cell a, otherwise store 0 in cell a.
@@ -276,8 +256,7 @@ public class VPL{
                 if(mem[ bp+2+b] < mem[ bp+2+c]){
                     mem[ bp+2+a ] = 1;
                 } else { mem[ bp+2+a ] = 0;}
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the less-than result is: " + mem[ bp+2+a ]);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == lessEqualCode ){  	// Instruction #17: If the value in cell b is less than or equal to cell c,
                                     			// store value 1 in cell a, otherwise store 0 in cell a.
@@ -288,8 +267,9 @@ public class VPL{
                 if(mem[ bp+2+b] <= mem[ bp+2+c]){
                     mem[ bp+2+a ] = 1;
                 } else { mem[ bp+2+a ] = 0;}
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the less-than or equal-to result is: " + mem[ bp+2+a ]);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
+//            System.out.println("Was result of less-than-equal-to true? " + mem[ bp+2+a ]);
+//            System.out.println("contents of cell b: " + mem[ bp+2+b ] + " , contents of cell c: " + mem[ bp+2+c]);
             }
             else if( op == andCode ){    		// Instruction #18: If the value in cell b is 1 AND the value in cell c is 1,
                                     			// store value 1 in cell a, otherwise store 0 in cell a.
@@ -300,8 +280,7 @@ public class VPL{
                 if(mem[ bp+2+b] == 1 && mem[ bp+2+c] == 1){
                     mem[ bp+2+a ] = 1;
                 } else { mem[ bp+2+a ] = 0;}
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the 1-and-1 result is: " + mem[ bp+2+a ]);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == orCode ){    		// Instruction #19: If the value in cell b is 1 OR the value in cell c is 1,
                                     			// store value 1 in cell a, otherwise store 0 in cell a.
@@ -313,7 +292,6 @@ public class VPL{
                     mem[ bp+2+a ] = 1;
                 } else { mem[ bp+2+a ] = 0;}
 	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; contents of cell " + c + ": " + mem[ bp+2+c ] + "; the 1-or-1 result is: " + mem[ bp+2+a ]);
             }
             else if( op == notCode ){    		// Instruction #20: If cell b holds zero, put 1 in cell a, otherwise put 0.
                 a = mem[ ip+1 ];    			// store a value
@@ -323,28 +301,24 @@ public class VPL{
                     mem[ bp+2+a ] = 1;      	// store 1 in cell a
                 } else { mem[ bp+2+a ] = 0; }   // otherwise store 0 in cell a
                 ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": "  + mem[ bp+2+b ] + "; the has-zero result is: " + mem[ bp+2+a ]);
             }
             else if( op == oppCode ){    		// Instruction #21: Put the opposite of the contents of cell b in cell a.
                 a = mem[ ip+1 ];    			// store a value
                 b = mem[ ip+2 ];    			// store b value
                 mem[ bp+2+a ] = mem[ bp+2+b ] * -1;		// put the opposite of the contents of cell b into cell a
                 ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("contents of cell " + b + ": " + mem[ bp+2+b] + "; the opposite result is: " + mem[ bp+2+a ]);
             }
             else if( op == litCode ){    		// Instruction #22: Put n in cell a.
                 a = mem[ ip+1 ];    			// store n value
                 n = mem[ ip+2 ];    			// store a value
-                mem[ bp+2+a ] = n;  			// storing n in cell a
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("executing instr. #22: \nvalue: " + n + " stored in cell " + a);
+                mem[ bp+2+a ] = n;  			// store n in cell a
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == copyCode ){    		// Instruction #23: Copy the value in cell b into cell a.
                 a = mem[ ip+1 ];    			// store a value
                 b = mem[ ip+2 ];    			// store b value
                 mem[ bp+2+a ] = mem[ bp+2+b ];  // store the contents of cell b into cell a
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("end of 23 ip: " + ip);
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == getCode ){    		// Instruction #24: Get the value stored in the heap at the index
                                         		// obtained by adding the value of cell b and the value of cell c
@@ -352,10 +326,11 @@ public class VPL{
                 a = mem[ ip+1 ];    			// store a value
                 b = mem[ ip+2 ];    			// store b value
                 c = mem[ ip+3 ];    			// store c value
-                int location = mem[ bp+2+b ] + mem[ bp+2+c ];      // store the sum of the contents in cells b and c
-                mem[ bp+2+a] = mem[ location ];     // use the sum "temp" as the index in the heap then copy to local cell a
+                int location = mem[ bp+2+b ] + mem[ bp+2+c ];      // cell location computed by adding contents of cell b & c
+                mem[ bp+2+a] = mem[ location ]; // store the contents of the location into cell a
                 ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("executing instr. #24: \n location= " + location + "; contents in cell " + a + ": " + mem[ bp+2+a ]);
+//                System.out.println("contents of cell b: " + mem[ bp+2+b ] + ". contents of cell c: " + mem[ bp+2+c ]);
+//                System.out.println("value " + mem[location] + "stored FROM heap location: " + location);
             }
             else if( op == putCode ) {    		// Instruction #25: Take the value from cell c
                 								// and store it in the heap at the location with index
@@ -364,9 +339,9 @@ public class VPL{
                 b = mem[ip + 2];    			// store b value
                 c = mem[ip + 3];    			// store c value
                 int location = mem[bp + 2 + a] + mem[bp + 2 + b];  	// cell location computed by adding contents of cell a & b
-                mem[location] = mem[bp + 2 + c];       // store the contents of cell c into new location
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("Instr. #25: \nlocation= " + location + "; contents in cell location: " + mem[location]);
+                mem[location] = mem[bp + 2 + c];// store the contents of cell c into new location
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
+//                System.out.println("value stored TO heap location: " + location);
             }
             else if( op == haltCode ){    		// Instruction #26: Halt Execution
                 break;
@@ -374,7 +349,6 @@ public class VPL{
             else if( op == inputCode ){    		// Instruction #27: Print a question mark and a space ?_ in the console
                                             	// and wait for an integer value typed by the user,
                                             	// and then store it in cell a.
-                System.out.println("start of 27 ip: " + ip);
                 a = mem[ ip+1 ];                // store value a
                 Scanner keyboard = new Scanner(System.in);
                 System.out.println("? ");       // print ?_
@@ -383,17 +357,16 @@ public class VPL{
                 //int myInt = Integer.parseInt(sysIn.readLine());
                 mem[ bp+2+a ] = myInt;           // store input in cell a
                 ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("end of 27 ip: " + ip);
             }
             else if( op == outputCode ){    	// Instruction #28: Display the value store in a cell a in the console.
                 a = mem[ ip+1 ];                // store value a
-                System.out.println( "Contents of cell " + a + " :" + mem[ bp+2+a ] );        // print contents of cell a
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
+                System.out.println( mem[ bp+2+a ] );        // print contents of cell a
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == newlineCode ){    	// Instruction #29: Move the console cursor to
                                             	// the beginning of the next line.
                 System.out.println("\n");
-	              ip += numArgs(op)+1;    		// move instruction pointer to next instruction
+	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == symbolCode ){    	// Instruction #30: If the value stored in cell a is between 32 and 126,
                                             	// display the corresponding symbol at the console cursor,
@@ -413,7 +386,6 @@ public class VPL{
                 hp = hp - m;                    // hp is decreased by m
                 mem[ bp+2+a ] = hp;             // new value of hp in cell a
                 ip += numArgs(op)+1;    		// move instruction pointer to next instruction
-                System.out.println("instr. #31 executed; contents of cell " + b + "; m = " + m + "; hp = " + hp + "; contents of cell " + a + ": " + mem[ bp+2+a ]);
             }
             else if( op == allocGlobalCode ){   // Instruction #32: This instruction must occur first in any program
                                                 // that uses it. It simply sets the initial value of
@@ -425,24 +397,24 @@ public class VPL{
 	            ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             }
             else if( op == toGlobalCode ){    	// Instruction #33: Copy the contents of cell a to the
-                                            // global memory area at index gp+n.
+                                                // global memory area at index gp+n.
                 n = mem[ip + 1];                // store n value
                 a = mem[ip + 2];                // store a value
-                mem[gp + n] = mem[bp + 2 + a];    // stores contents of local cell a into global cell n
-                ip += numArgs(op) + 1;            // move instruction pointer to next instruction
+                mem[gp + n] = mem[bp + 2 + a];  // stores contents of local cell a into global cell n
+                ip += numArgs(op) + 1;          // move instruction pointer to next instruction
 
             }
             else if( op == fromGlobalCode ){    // Instruction #34:
-                n = mem[ip + 1];                // store n value
-                a = mem[ip + 2];                // store a value
-                mem[bp + 2 + a] = mem[gp + n];    // stores contents of glocal cell n into local cell a
+                a = mem[ip + 1];                // store n value
+                n = mem[ip + 2];                // store a value
+                mem[bp + 2 + a] = mem[gp + n];  // stores contents of glocal cell n into local cell a
                 ip += numArgs(op)+1;    		// move instruction pointer to next instruction
             } // end last else-if statement
 
         } // end while loop
 
-        System.out.println("Code is " );
-        showMem( 0, sp+10 );
+//       System.out.println("Result Code is " );
+//        showMem( 0, sp+10 );
 
     } // end main
 
